@@ -1,0 +1,3731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C Quiz</title>
+    
+    <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      }
+    };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --success-bg: #dcfce7;
+            --success-text: #166534;
+            --error-bg: #fee2e2;
+            --error-text: #991b1b;
+            --accent: #7c3aed;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        /* --- SCREENS --- */
+        .screen { display: none; animation: fadeIn 0.4s ease-in-out; }
+        .screen.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- MENU --- */
+        .menu-card {
+            background: var(--card-bg);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .chapter-grid { display: grid; gap: 15px; margin-top: 30px; }
+        .chapter-btn {
+            background: white; border: 2px solid #e2e8f0; padding: 20px;
+            border-radius: 12px; font-size: 1.1rem; font-weight: 600;
+            cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+            transition: all 0.2s;
+        }
+        .chapter-btn:hover { border-color: var(--primary); background: #eff6ff; transform: translateY(-2px); }
+
+        /* --- QUIZ --- */
+        .quiz-header {
+            background: var(--card-bg); padding: 15px 25px; border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 20px;
+            display: flex; justify-content: space-between; font-weight: 600; color: #64748b;
+        }
+        .question-card {
+            background: var(--card-bg); padding: 30px; border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); margin-bottom: 20px;
+        }
+        .q-text { font-size: 1.35rem; margin-bottom: 25px; line-height: 1.5; font-weight: 600; color: #1e293b; }
+        .option {
+            display: block; width: 100%; text-align: left; padding: 18px; margin-bottom: 12px;
+            background: white; border: 2px solid #e2e8f0; border-radius: 12px;
+            font-size: 1.05rem; cursor: pointer; transition: all 0.2s; color: #334155;
+        }
+        .option:hover:not(:disabled) { border-color: var(--primary); background: #f1f5f9; }
+        .option.correct { border-color: var(--success-text); background-color: var(--success-bg); color: var(--success-text); }
+        .option.incorrect { border-color: var(--error-text); background-color: var(--error-bg); color: var(--error-text); }
+
+        /* --- AI SECTION --- */
+        .ai-box {
+            margin-top: 25px; background: #fbfbfe; border: 1px solid #e9d5ff;
+            border-radius: 12px; padding: 20px; display: none;
+        }
+        .ai-box.show { display: block; animation: slideDown 0.3s ease; }
+        .ai-header {
+            color: var(--accent); font-weight: 700; font-size: 0.9rem;
+            text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;
+            display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #e9d5ff; padding-bottom: 8px;
+        }
+        .ai-content { font-size: 0.95rem; line-height: 1.7; color: #475569; }
+        .ai-content strong { color: #1e293b; font-weight: 700; }
+        
+        /* Loading Spinner */
+        .loader {
+            display: flex; align-items: center; gap: 10px; color: #64748b; font-style: italic;
+        }
+        .spinner {
+            width: 16px; height: 16px; border: 2px solid #e9d5ff; 
+            border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Controls */
+        .controls { display: flex; gap: 15px; margin-top: 30px; }
+        .btn {
+            padding: 14px 24px; border-radius: 10px; border: none; font-weight: 600;
+            cursor: pointer; font-size: 1rem; flex: 1; transition: all 0.2s;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-primary:disabled { background: #cbd5e1; cursor: not-allowed; }
+        .btn-ai { background: white; border: 2px solid var(--accent); color: var(--accent); flex: 0 0 auto; }
+        .btn-ai:hover { background: #faf5ff; }
+
+        /* --- RESULT --- */
+        .result-card { background: white; padding: 60px; border-radius: 20px; text-align: center; }
+        .score-big { font-size: 5rem; font-weight: 800; color: var(--primary); margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+
+    <div id="screen-menu" class="screen active">
+        <div class="menu-card">
+            <h1 style="color: var(--primary-dark);">C programming Quiz</h1>
+            <p style="color: #64748b;">Powered by Llama 3.3 (Groq)</p>
+            <div class="chapter-grid">
+                <button class="chapter-btn" onclick="startChapter('ch1')">
+                    <span>Programming Concepts</span>
+                    <span style="background:#f1f5f9; padding:4px 10px; border-radius:20px; font-size:0.8rem;">40 Qs</span>
+                </button>
+                <button class="chapter-btn" onclick="startChapter('ch2')">
+                    <span>Introduction to Programming in C</span>
+                    <span style="background:#f1f5f9; padding:4px 10px; border-radius:20px; font-size:0.8rem;">20 Qs</span>
+                </button>
+                <button class="chapter-btn" onclick="startChapter('ch3')">
+                    <span>Constants, Variables and Data Types</span>
+                    <span style="background:#f1f5f9; padding:4px 10px; border-radius:20px; font-size:0.8rem;">30 Qs</span>
+                </button>
+                <button class="chapter-btn" onclick="startChapter('ch4')">
+                    <span>Input and output</span>
+                    <span style="background:#f1f5f9; padding:4px 10px; border-radius:20px; font-size:0.8rem;">40 Qs</span>
+                </button>
+                <button class="chapter-btn" onclick="startChapter('ch5')">
+                    <span>Operators</span>
+                    <span style="background:#f1f5f9; padding:4px 10px; border-radius:20px; font-size:0.8rem;">30 Qs</span>
+                </button>
+                <button class="chapter-btn" onclick="startChapter('ch6')">
+                    <span>Control Structures</span>
+                    <span style="background:#f1f5f9; padding:4px 10px; border-radius:20px; font-size:0.8rem;">40 Qs</span>
+                </button>
+              <button class="chapter-btn" onclick="startChapter('ch7')">
+                    <span>IF and Switch</span>
+                    <span style="background:#f1f5f9; padding:4px 10px; border-radius:20px; font-size:0.8rem;">40 Qs</span>
+                </button>
+              <button class="chapter-btn" onclick="startChapter('ch8')">
+                    <span>while, do-while, and for loop</span>
+                    <span style="background:#f1f5f9; padding:4px 10px; border-radius:20px; font-size:0.8rem;">40 Qs</span>
+                </button>
+              <button class="chapter-btn" onclick="startChapter('ch9')">
+                    <span>Array</span>
+                    <span style="background:#f1f5f9; padding:4px 10px; border-radius:20px; font-size:0.8rem;">50 Qs</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-quiz" class="screen">
+        <div class="quiz-header">
+            <span id="quiz-progress">Question 1/40</span>
+            <span style="cursor:pointer;" onclick="location.reload()">Exit</span>
+        </div>
+
+        <div class="question-card">
+            <div id="question-text" class="q-text"></div>
+            <div id="options-container"></div>
+
+            <div id="ai-container" class="ai-box">
+                <div class="ai-header">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2M7.5 13A2.5 2.5 0 1 0 5 15.5 2.5 2.5 0 0 0 7.5 13m9 0A2.5 2.5 0 1 0 14 15.5 2.5 2.5 0 0 0 16.5 13"/></svg>
+                    AI Explanation
+                </div>
+                <div id="ai-content" class="ai-content"></div>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-ai" onclick="fetchAIExplanation()">
+                    Ask AI
+                </button>
+                <button id="next-btn" class="btn btn-primary" onclick="nextQuestion()" disabled>
+                    Next Question
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-result" class="screen">
+        <div class="result-card">
+            <h2>Quiz Complete!</h2>
+            <div class="score-big" id="final-score">0%</div>
+            <p id="final-msg"></p>
+            <button class="btn btn-primary" onclick="location.reload()" style="margin-top:20px; max-width:200px;">Back to Menu</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // --- CONFIGURATION ---
+    const GROQ_API_KEY = "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";
+    const AI_MODEL = "llama-3.3-70b-versatile";
+
+    // --- DATABASE ---
+    const database = {
+        "ch1": [
+    {
+      "q": "Which of the following best describes the fundamental difference between a program and an algorithm?",
+      "options": [
+        "A program is a detailed solution design, while an algorithm is the machine code.",
+        "A program is a collection of logical instructions to accomplish a task, while an algorithm is a detailed solution with clearly defined steps.",
+        "An algorithm is a specific set of machine instructions, while a program is a theoretical outline.",
+        "There is no difference; the terms are synonymous in computer science."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In the Program Development Cycle, which step immediately follows 'Outlining the Solution'?",
+      "options": [
+        "Coding the algorithm",
+        "Defining the problem",
+        "Developing the algorithm",
+        "Testing the algorithm"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What are the three specific items identified during the 'Define The Problem' stage of program development?",
+      "options": [
+        "Variables, Control Structures, and Syntax",
+        "Inputs, Outputs, and General Processing Steps",
+        "Flowcharts, Pseudocodes, and Structure Charts",
+        "Local Data, Global Data, and Constants"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which tool is primarily used to present the inputs, outputs, and general processing steps during the problem definition phase?",
+      "options": [
+        "Flowchart",
+        "Defining Diagram",
+        "Nassi-Shneiderman Diagram",
+        "Desk Check Table"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "During the 'Outline The Solution' phase, which of the following is NOT typically identified?",
+      "options": [
+        "Major processing tasks",
+        "Major control structures",
+        "Specific syntax of the programming language",
+        "Main line logic"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which step of the program development cycle involves the use of a 'Desk Check Table'?",
+      "options": [
+        "Develop the Algorithm",
+        "Test the Algorithm for Correctness",
+        "Code the Algorithm",
+        "Run the Program"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which statement accurately describes the 'Document and Maintain the Program' stage?",
+      "options": [
+        "It is the final step and only occurs after the program is fully coded.",
+        "It is an on-going process that starts from the very beginning of the development cycle.",
+        "It involves only the creation of user manuals.",
+        "It is meant solely for the end-user to understand the inputs."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which of the following is NOT a characteristic of a good tool for program design?",
+      "options": [
+        "It must be concise.",
+        "It must be unambiguous.",
+        "It must be capable of machine execution.",
+        "It must be complex to ensure security."
+      ],
+      "correct": 3
+    },
+    {
+      "q": "What is a distinct feature of Nassi-Shneiderman (NS) diagrams compared to flowcharts?",
+      "options": [
+        "They use arrows to show logic flow.",
+        "The absence of arrows ensures strict adherence to structured programming concepts.",
+        "They are better for asynchronous processes.",
+        "They are the most widely used design tool in modern industry."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is cited as a major disadvantage of using Flowcharts?",
+      "options": [
+        "They are difficult for people to follow visually.",
+        "The flow of logic can become convoluted (spaghetti code) due to unrestricted arrow usage.",
+        "They cannot represent simple procedures.",
+        "They require a specific programming language to construct."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which design tool is described as a 'top-down decomposition' of a program presented as a tree structure?",
+      "options": [
+        "Flowchart",
+        "Pseudocode",
+        "Structure Chart",
+        "Defining Diagram"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What is a disadvantage of using Pseudocode?",
+      "options": [
+        "It requires the programmer to memorize symbols.",
+        "It is difficult to modify and update.",
+        "There are no standard specifications, and it can become lengthy for complex problems.",
+        "It cannot define the scoping of data."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which programming paradigm defines computation as an explicit sequence of commands that update state step-by-step?",
+      "options": [
+        "Declarative",
+        "Imperative",
+        "Logic",
+        "Object-Oriented"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "The 'Structured' programming paradigm is characterized by:",
+      "options": [
+        "The extensive use of 'goto' statements.",
+        "Clean, goto-free nested control structures (sequence, selection, iteration).",
+        "Specifying the result without specifying how to get it.",
+        "Defining objects that send messages to each other."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In the Object-Oriented paradigm, how do objects interact?",
+      "options": [
+        "By sharing global variables.",
+        "By sending messages to each other.",
+        "By strictly following a linear sequence of commands.",
+        "By inference rules engine."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which paradigm involves specifying a set of facts and rules where an engine infers answers?",
+      "options": [
+        "Imperative",
+        "Structured",
+        "Logic (Rule-based)",
+        "Object-Oriented"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "In the context of basic mathematical algorithms, what does the operator 'div' represent?",
+      "options": [
+        "Standard division",
+        "Integer division",
+        "Exponentiation",
+        "Remainder of division"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the result of the 'mod' operator?",
+      "options": [
+        "The quotient of a division.",
+        "The remainder of an integer division.",
+        "The product of two integers.",
+        "The power of a number."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "According to standard data naming conventions discussed, which of the following is valid?",
+      "options": [
+        "Names must start with a digit.",
+        "Names are typically case sensitive in all languages.",
+        "Names must start with an alphabetic character.",
+        "Names cannot contain alphanumeric characters."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What is 'Explicit Data Definition'?",
+      "options": [
+        "Data items are registered as they are encountered in the code.",
+        "All data items must be defined prior to their use in a procedural statement.",
+        "Data items are defined by the user during runtime.",
+        "Data definitions are optional."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Why is 'Implicit Data Definition' considered dangerous?",
+      "options": [
+        "It requires too much memory.",
+        "It slows down the compilation process.",
+        "A misspelled variable name registers as a new variable, causing logic errors.",
+        "It prevents the use of global variables."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "How do Real numbers differ from Integers in terms of data storage?",
+      "options": [
+        "Real numbers can only be positive.",
+        "Real numbers are whole numbers only.",
+        "Real numbers can hold fractional values and generally greater magnitudes.",
+        "Real numbers take up less memory than integers."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which data type would be used to store a status indicator or flag with values True/False?",
+      "options": [
+        "Character",
+        "String",
+        "Integer",
+        "Boolean"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "What distinguishes a 'Variable' from a 'Constant'?",
+      "options": [
+        "Variables must be numeric; constants must be text.",
+        "Variables are global; constants are local.",
+        "Variables can change value during execution; constants cannot.",
+        "Variables are defined implicitly; constants are defined explicitly."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What is the primary advantage of using 'Local' data scope?",
+      "options": [
+        "It allows data to be shared across the entire program.",
+        "It prevents data corruption by restricting access to the specific procedure.",
+        "It reduces the need for variable declaration.",
+        "It increases the execution speed of the program."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In a Structure Chart, what does the diagram primarily show?",
+      "options": [
+        "The detailed logic of each module.",
+        "The functional flow and breakdown of a system into manageable parts.",
+        "The database relationship model.",
+        "The time complexity of the algorithm."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which programming paradigm states 'what the result should look like, not how to obtain it'?",
+      "options": [
+        "Imperative",
+        "Declarative",
+        "Structured",
+        "Procedural"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "When writing an algorithm, what is the purpose of the 'local data' section?",
+      "options": [
+        "To comment on the program's purpose.",
+        "To define the variables that will be used within the module.",
+        "To input values from the user.",
+        "To display the output."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In the context of the defining diagram, which column comes between Input and Output?",
+      "options": [
+        "Storage",
+        "Processing",
+        "Feedback",
+        "Control"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is a 'Structure Chart' criticized for in terms of disadvantages?",
+      "options": [
+        "It is too detailed for high-level design.",
+        "It does not work well for asynchronous processes.",
+        "It cannot be drawn by hand.",
+        "It hides the functional hierarchy."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which operator is used for exponentiation (raising to a power) in the algorithm notes?",
+      "options": [
+        "exp",
+        "^",
+        "pow",
+        "**"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "If a variable is defined as 'Global', it implies that:",
+      "options": [
+        "It is accessible by only the main module.",
+        "It is accessible by a number of procedures or modules.",
+        "It is deleted from memory immediately after use.",
+        "It cannot be modified."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which of the following is true regarding 'Character' data?",
+      "options": [
+        "It only includes alphabetic letters.",
+        "It consists of digits, letters, or symbols represented by coding systems like ASCII.",
+        "It cannot handle digits.",
+        "It is used for mathematical calculations."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In the algorithm example provided (Slide 51), what syntax error is present in the output statement?",
+      "options": [
+        "Missing local data definition",
+        "Incorrect variable name 'Multilpy' (typo)",
+        "Wrong data type for output",
+        "Missing 'begin' statement"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the suggested naming convention for multipart variable names?",
+      "options": [
+        "Use underscores between words (e.g., total_student).",
+        "Use all uppercase (e.g., TOTALSTUDENT).",
+        "Commence each part with an upper case letter (e.g., TotalStudent).",
+        "Use all lowercase (e.g., totalstudent)."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which step involves running the program on a computer system and rectifying encountered problems?",
+      "options": [
+        "Step 4: Test Algorithm",
+        "Step 5: Code the Algorithm",
+        "Step 6: Run the Program",
+        "Step 7: Maintain the Program"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which tool provides a 'synchronous hierarchy of modules'?",
+      "options": [
+        "Flowchart",
+        "Structure Chart",
+        "Pseudocode",
+        "NS Diagram"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Why is Pseudocode often universally accepted?",
+      "options": [
+        "It is the only tool that compiles directly.",
+        "It forms the basis of algorithm specification in the absence of a specific language.",
+        "It uses standardized graphics.",
+        "It is required by law for documentation."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "The 'Main Line Logic' is typically identified during which stage?",
+      "options": [
+        "Define The Problem",
+        "Outline The Solution",
+        "Code The Algorithm",
+        "Run The Program"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which stage of program development maps directly to 'Designing the Program'?",
+      "options": [
+        "Define the Problem",
+        "Develop the Algorithm",
+        "Code the Algorithm",
+        "Document the Program"
+      ],
+      "correct": 1
+    }
+  ],
+  /* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx */
+        "ch2": [
+    {
+      "q": "Which generation of programming languages is primarily characterized by the use of mnemonics to represent machine operations, requiring translation into machine code?",
+      "options": [
+        "First Generation (Machine Language)",
+        "Second Generation (Assembly Language)",
+        "Third Generation (High-Level Language)",
+        "Fourth Generation (Very High-Level Language)"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the primary distinction between a compiler and an interpreter regarding execution speed and error detection?",
+      "options": [
+        "Compilers execute slower but find errors line-by-line; Interpreters execute faster but find errors at the end.",
+        "Compilers translate the whole program, leading to faster execution but harder debugging; Interpreters translate line-by-line, leading to slower execution but easier debugging.",
+        "Both have identical execution speeds, but compilers consume less memory.",
+        "Interpreters generate intermediate object code, making them faster than compilers."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which type of error goes unnoticed by the compiler but produces incorrect or unexpected results during program execution?",
+      "options": [
+        "Syntax Error",
+        "Runtime Error",
+        "Logical Error",
+        "Compilation Error"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "According to the history of C, which language is considered the 'root' of all modern languages and introduced the concept of structured programming in the early 1960s?",
+      "options": [
+        "BCPL",
+        "B",
+        "ALGOL",
+        "FORTRAN"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Who is credited with developing the C programming language at Bell Laboratories in 1972?",
+      "options": [
+        "Ken Thompson",
+        "Martin Richards",
+        "Dennis Ritchie",
+        "Brian Kernighan"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which generation of programming languages includes Artificial Intelligence languages like Prolog and Mercury, focusing on constraint programming?",
+      "options": [
+        "Third Generation",
+        "Fourth Generation",
+        "Fifth Generation",
+        "Second Generation"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What is a characteristic of Fourth Generation Languages (4GLs) compared to 3GLs?",
+      "options": [
+        "They are designed to reduce software development time, effort, and cost, often used in database queries.",
+        "They require the programmer to manage memory manually.",
+        "They are machine-dependent and difficult to port.",
+        "They use binary code exclusively."
+      ],
+      "correct": 0
+    },
+    {
+      "q": "In the context of C programming, what function serves as the mandatory entry point where program execution begins?",
+      "options": [
+        "start()",
+        "begin()",
+        "main()",
+        "init()"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which of the following statements about Machine Language is true?",
+      "options": [
+        "It uses English-like abbreviations.",
+        "It is the only language a computer is capable of directly understanding.",
+        "It is highly portable across different computer architectures.",
+        "It belongs to the Third Generation of programming languages."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What specific type of error occurs when a program attempts an illegal operation during execution, such as dividing by zero?",
+      "options": [
+        "Syntax Error",
+        "Logical Error",
+        "Runtime Error",
+        "Linker Error"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which programming language was developed by Ken Thompson in 1970 and used to create early versions of the UNIX operating system?",
+      "options": [
+        "BCPL",
+        "B",
+        "C",
+        "Pascal"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "The ANSI C standard was established in which year?",
+      "options": [
+        "1972",
+        "1978",
+        "1989",
+        "1999"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which of the following is NOT a feature or characteristic of the C programming language?",
+      "options": [
+        "It is a structured programming language.",
+        "It is highly portable.",
+        "It allows writing both operating systems and applications.",
+        "It is a purely interpreted language."
+      ],
+      "correct": 3
+    },
+    {
+      "q": "What is the primary role of an 'Assembler'?",
+      "options": [
+        "To translate high-level code into machine code.",
+        "To translate assembly code into machine language codes.",
+        "To execute a program line-by-line.",
+        "To debug logical errors."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which C standard introduced in 2011 is referred to as 'C11'?",
+      "options": [
+        "Standardization Committee",
+        "Committee responsible for standardizing",
+        "Technical correction done",
+        "New key word and features"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In a C program, what does the 'void' keyword before 'main()' typically indicate?",
+      "options": [
+        "The function takes no arguments.",
+        "The function returns no value.",
+        "The function is empty.",
+        "The function is global."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which type of error is typically easiest to fix because it is pointed out by the compiler?",
+      "options": [
+        "Logical Error",
+        "Runtime Error",
+        "Syntax Error",
+        "Design Error"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "BCPL (Basic Combined Programming Language) was primarily developed for what purpose?",
+      "options": [
+        "Artificial Intelligence",
+        "Database Management",
+        "Writing system software",
+        "Web Development"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which of the following is a characteristic of Third Generation Languages (High-Level Languages)?",
+      "options": [
+        "Programmers must understand the internal architecture of the computer.",
+        "They use mnemonics like ADD and MOV.",
+        "A single statement can accomplish multiple machine tasks.",
+        "They are machine-dependent."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which standard followed C11 and involved technical corrections?",
+      "options": [
+        "C99",
+        "C18 (or C17)",
+        "C23",
+        "ANSI C"
+      ],
+      "correct": 1
+    }
+  ]
+,
+    /* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx */
+
+         "ch3": [
+    {
+      "q": "Which of the following best represents the classification of the 'Character Set' in C programming?",
+      "options": [
+        "Alphabets, Numbers, Variables, Functions",
+        "Letters, Digits, Special Characters, White Spaces",
+        "Integers, Floats, Characters, Strings",
+        "Constants, Identifiers, Keywords, Operators"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In the hierarchy of C Tokens, which category includes elements like 'auto', 'double', and 'while'?",
+      "options": [
+        "Identifiers",
+        "Constants",
+        "Keywords",
+        "Operators"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "How does the C compiler interpret the integer constant `037`?",
+      "options": [
+        "As a Decimal Integer",
+        "As a Hexadecimal Integer",
+        "As an Octal Integer",
+        "As a Binary Integer"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which of the following rules for defining Identifiers is INCORRECT?",
+      "options": [
+        "The first character must be an alphabet or underscore.",
+        "They must not contain white space.",
+        "Only the first 31 characters are significant.",
+        "Keywords can be used as identifiers if written in uppercase."
+      ],
+      "correct": 3
+    },
+    {
+      "q": "What is the primary function of the `typedef` keyword in C?",
+      "options": [
+        "To define a new data type from scratch.",
+        "To allow users to define an identifier that represents an existing data type.",
+        "To declare a variable that cannot change its value.",
+        "To define a symbolic constant at the beginning of a program."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which of the following declarations represents a symbolic constant correctly?",
+      "options": [
+        "const float PI = 3.14;",
+        "#define PI 3.14;",
+        "#define PI 3.14",
+        "symbolic PI = 3.14"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What characterizes a variable in C regarding its value and data type?",
+      "options": [
+        "Both its value and data type can change during execution.",
+        "Its value can change, but its data type cannot change.",
+        "Its value is fixed, but its data type can change.",
+        "Neither its value nor its data type can change."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which of the following is a valid Hexadecimal Integer constant?",
+      "options": [
+        "0551",
+        "123",
+        "0X9F",
+        "1.5e+5"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Identify the syntax error in the following declaration: `long int m; count;`",
+      "options": [
+        "The data type `long int` is invalid.",
+        "The variable `count` is not declared with a type.",
+        "Variables cannot be declared on the same line.",
+        "The semicolon after `m` separates it from `count`, leaving `count` undefined."
+      ],
+      "correct": 3
+    },
+    {
+      "q": "What is the range of values for an `unsigned short int` data type?",
+      "options": [
+        "-128 to 127",
+        "0 to 255",
+        "0 to 65535",
+        "-32768 to +32767"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which statement accurately describes the `void` data type?",
+      "options": [
+        "It holds a single character value.",
+        "It is used to return integer values from functions.",
+        "It specifies the type of a function that does not return any value.",
+        "It is a user-defined data type."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Consider the declaration `typedef int units;`. How would you declare variables `batch1` and `batch2` using this new type definition?",
+      "options": [
+        "int units batch1, batch2;",
+        "units batch1, batch2;",
+        "typedef batch1, batch2;",
+        "units = batch1, batch2;"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which of the following is NOT a valid C Token?",
+      "options": [
+        "Strings",
+        "Operators",
+        "Comments",
+        "Special Symbols"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which identifier is invalid because it contains a special character used as an operator?",
+      "options": [
+        "gross_income",
+        "_salary",
+        "base+height",
+        "test123"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "When using `#define NAME text`, what happens during compilation?",
+      "options": [
+        "A variable named `NAME` is created in memory.",
+        "The compiler checks `NAME` for syntax errors.",
+        "Each occurrence of `NAME` is replaced by the character sequence `text`.",
+        "The program stops to ask for user input."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which of the following represents a Real Constant in scientific notation?",
+      "options": [
+        "0x2",
+        "0.65e4",
+        "037",
+        "'ln'"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the correct syntax to declare a variable `taxrate` as a constant double with a value of 0.0175?",
+      "options": [
+        "#define taxrate 0.0175;",
+        "constant double taxrate = 0.0175;",
+        "const double taxrate = 0.0175;",
+        "double const = 0.0175 taxrate;"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which of the following variable declarations contains a case-sensitivity error based on standard C keywords?",
+      "options": [
+        "int x;",
+        "Int x;",
+        "float letter;",
+        "double p;"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which data type has the range `3.4E-38` to `3.4E+38`?",
+      "options": [
+        "double",
+        "long double",
+        "float",
+        "int"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Identify the incorrect identifier from the list below.",
+      "options": [
+        "count",
+        "continue",
+        "gross_income",
+        "test123"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In the assignment statement `amount = value + balance;`, what is the operator `=` called?",
+      "options": [
+        "Equality operator",
+        "Assignment operator",
+        "Relational operator",
+        "Arithmetic operator"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which character constant represents a 'New line'?",
+      "options": [
+        "'\\t'",
+        "'\\n'",
+        "'\\r'",
+        "'\\b'"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the maximum value for an `unsigned int`?",
+      "options": [
+        "32767",
+        "2,147,483,647",
+        "65535",
+        "4,294,967,295"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which of the following is considered a 'String Constant'?",
+      "options": [
+        "'A'",
+        "0.065",
+        "\"Hello!\"",
+        "123"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "The declaration `double = p, q` is erroneous because:",
+      "options": [
+        "It uses the assignment operator `=` incorrectly in a declaration.",
+        "It declares two variables of the same type.",
+        "It uses a comma to separate variables.",
+        "Double variables cannot be named `p` or `q`."
+      ],
+      "correct": 0
+    },
+    {
+      "q": "Which of the following is a 'Special Character' in the C character set?",
+      "options": [
+        "A",
+        "9",
+        "$",
+        "Space"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Initialization of a character variable `start` with an asterisk is correctly written as:",
+      "options": [
+        "char start = \"*\";",
+        "char start = '*';",
+        "char start = *;",
+        "character start = '*';"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which of the following is NOT a primary (fundamental) data type in C?",
+      "options": [
+        "Array",
+        "Integer",
+        "Floating point",
+        "Character"
+      ],
+      "correct": 0
+    },
+    {
+      "q": "What distinguishes the identifier `high balance` as incorrect?",
+      "options": [
+        "It is too long.",
+        "It uses lowercase letters.",
+        "It contains a white space.",
+        "It uses an English word."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Typically, symbolic constants defined with `#define` are written in:",
+      "options": [
+        "Lowercase letters",
+        "CamelCase",
+        "Uppercase letters",
+        "Binary"
+      ],
+      "correct": 2
+    }
+  ],
+    /* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx */
+
+        "ch4": [
+    {
+      "q": "Which function is specifically used for single character input in C?",
+      "options": [
+        "scanf()",
+        "getchar()",
+        "getch()",
+        "inputchar()"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the purpose of the `putchar()` function?",
+      "options": [
+        "To input a single character.",
+        "To output a single character given as an argument.",
+        "To put a character into a string.",
+        "To convert a character to an integer."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In the `printf()` function, what does the control string contain?",
+      "options": [
+        "Only the text to be displayed.",
+        "Formatting information and text.",
+        "The memory addresses of variables.",
+        "Mathematical expressions."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which conversion character is used in `printf()` to output a single character?",
+      "options": [
+        "%s",
+        "%d",
+        "%c",
+        "%f"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What does the conversion character `%s` represent in `printf()`?",
+      "options": [
+        "Single character",
+        "String",
+        "Scientific notation",
+        "Short integer"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "How can you specify a minimum field width of 5 for an integer in `printf()`?",
+      "options": [
+        "%5d",
+        "%d5",
+        "%.5d",
+        "%d"
+      ],
+      "correct": 0
+    },
+    {
+      "q": "What is the effect of using `%7.3f` in `printf()`?",
+      "options": [
+        "Prints a float with a minimum width of 7 and 3 decimal places.",
+        "Prints a float with 7 decimal places and a width of 3.",
+        "Prints a float 7 times with 3 decimal places.",
+        "Prints a float with a maximum width of 7."
+      ],
+      "correct": 0
+    },
+    {
+      "q": "In the context of `printf()` flags, what does the `-` flag indicate?",
+      "options": [
+        "Output is right-justified.",
+        "Output is left-justified.",
+        "Display a sign (+ or -) before the number.",
+        "Pad with zeros."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which flag causes leading zeros to appear in the output?",
+      "options": [
+        "+",
+        "-",
+        "0",
+        "#"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What is the function of `scanf()`?",
+      "options": [
+        "To print formatted output.",
+        "To read formatted input from the standard input.",
+        "To read a single character from a file.",
+        "To scan a string for a character."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In `scanf()`, why must variable names (other than arrays) be preceded by an ampersand (`&`)?",
+      "options": [
+        "To indicate they are constants.",
+        "To pass the address of the variable.",
+        "To specify the data type.",
+        "It is optional."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which `scanf()` conversion character is used to read a string?",
+      "options": [
+        "%c",
+        "%s",
+        "%S",
+        "%str"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What happens when `scanf(\"%s\", text)` encounters a whitespace character?",
+      "options": [
+        "It reads the whitespace as part of the string.",
+        "It terminates reading the string.",
+        "It skips the whitespace and continues reading.",
+        "It throws an error."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "How can you read a string containing spaces using `scanf()`?",
+      "options": [
+        "Use `%s`.",
+        "Use `gets()` only.",
+        "Use `%[^\n]` inside `scanf()`.",
+        "Use `%c` inside a loop."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What does the conversion specification `%[ ABC]` in `scanf()` do?",
+      "options": [
+        "Reads a string containing only characters 'A', 'B', 'C', or space.",
+        "Reads a string starting with 'ABC'.",
+        "Reads a string excluding 'A', 'B', and 'C'.",
+        "Reads 'ABC' as a constant."
+      ],
+      "correct": 0
+    },
+    {
+      "q": "In `scanf(\"%3d\", &a)`, what does the `3` indicate?",
+      "options": [
+        "Read 3 integers.",
+        "Read an integer with a maximum field width of 3.",
+        "Read the 3rd integer.",
+        "Skip 3 spaces."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "If the input is `123456` and the statement is `scanf(\"%3d%3d\", &a, &b)`, what will be the values of `a` and `b`?",
+      "options": [
+        "a=123, b=456",
+        "a=123456, b=0",
+        "a=12, b=34",
+        "Error"
+      ],
+      "correct": 0
+    },
+    {
+      "q": "Which `printf()` conversion character is used for printing a pointer address (hexadecimal)?",
+      "options": [
+        "%x",
+        "%p",
+        "%ptr",
+        "%u"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the output of `printf(\"%+d\", 10)`?",
+      "options": [
+        "10",
+        "+10",
+        "-10",
+        " 10"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which escape sequence represents a new line in C?",
+      "options": [
+        "\\t",
+        "\\n",
+        "\\r",
+        "\\a"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What does the `#` flag do when used with `%o` in `printf()`?",
+      "options": [
+        "Adds a leading 0x.",
+        "Adds a leading 0.",
+        "Adds a decimal point.",
+        "Left justifies the output."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "How do you print a literal percent sign `%` using `printf()`?",
+      "options": [
+        "\\%",
+        "%%",
+        "%",
+        "/%"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which `scanf()` modifier is used for `double` precision floating point variables?",
+      "options": [
+        "%f",
+        "%lf",
+        "%d",
+        "%L"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the `printf()` conversion code for an unsigned decimal integer?",
+      "options": [
+        "%d",
+        "%i",
+        "%u",
+        "%x"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "In the statement `scanf(\"%d\", &val);`, what happens if the user enters a non-numeric character?",
+      "options": [
+        "It is converted to ASCII.",
+        "The function stops reading and returns an error/count.",
+        "The program crashes.",
+        "It is stored as 0."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What conversion code is used to print a number in scientific notation (e-type)?",
+      "options": [
+        "%f",
+        "%e",
+        "%g",
+        "%s"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which header file is required to use `printf()` and `scanf()`?",
+      "options": [
+        "stdlib.h",
+        "conio.h",
+        "stdio.h",
+        "string.h"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What is the purpose of using `%.5s` in `printf()` for a string?",
+      "options": [
+        "Prints the string with a minimum width of 5.",
+        "Prints only the first 5 characters of the string.",
+        "Prints the last 5 characters.",
+        "Prints the string 5 times."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "When using `scanf(\"%c\", &ch)`, why is there sometimes an issue with reading the next character?",
+      "options": [
+        "The variable size is too small.",
+        "It reads the newline character left in the buffer.",
+        "scanf cannot read characters.",
+        "Memory leak."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What does `printf(\"%g\", val)` do?",
+      "options": [
+        "Prints as a global variable.",
+        "Prints as either %f or %e depending on the value, removing trailing zeros.",
+        "Prints as an unsigned integer.",
+        "Prints the address of val."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which of the following correctly inputs two integers separated by a space?",
+      "options": [
+        "scanf(\"%d %d\", &a, &b);",
+        "scanf(\"%d\", &a, &b);",
+        "scanf(\"%d %d\", a, b);",
+        "scanf(\"&d &d\", a, b);"
+      ],
+      "correct": 0
+    },
+    {
+      "q": "What is the output of `printf(\"%05d\", 12)`?",
+      "options": [
+        "12",
+        "   12",
+        "00012",
+        "12000"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What is the prefix `L` used for in conversion characters (e.g., `%Lf`)?",
+      "options": [
+        "Long integer",
+        "Long double",
+        "Left justified",
+        "Lowercase"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "How would you read a short integer using `scanf()`?",
+      "options": [
+        "%d",
+        "%hd",
+        "%sd",
+        "%short"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which function outputs to the standard output device?",
+      "options": [
+        "scanf",
+        "fscanf",
+        "printf",
+        "sscanf"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "In `printf()`, unrecognised characters in the control string are:",
+      "options": [
+        "Ignored",
+        "Displayed as they appear",
+        "Causing a compilation error",
+        "Converted to spaces"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which of the following is correct for defining a symbolic constant for PI?",
+      "options": [
+        "const float PI = 3.14;",
+        "#define PI 3.14",
+        "#define PI = 3.14;",
+        "symbol PI 3.14"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the output of `printf(\"%x\", 15)`?",
+      "options": [
+        "15",
+        "F",
+        "E",
+        "0F"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Can `scanf()` skips specific characters in the input stream?",
+      "options": [
+        "No, it reads everything.",
+        "Yes, by using the assignment suppression character *.",
+        "Yes, by using #.",
+        "Only whitespace can be skipped."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What represents the 'circumflex' character used in `scanf` scansets?",
+      "options": [
+        "&",
+        "^",
+        "~",
+        "%"
+      ],
+      "correct": 1
+    }
+  ]
+,
+    /* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx */
+"ch5": [
+    {
+      "q": "Which of the following is NOT one of the classifications of operators in C as listed in the notes?",
+      "options": [
+        "Arithmetic Operators",
+        "String Operators",
+        "Bitwise Operators",
+        "Conditional Operators"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the result of the integer division expression `14 / -4` in C?",
+      "options": [
+        "3",
+        "-3",
+        "3.5",
+        "-3.5"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In the context of the Modulo Division operator `%`, what determines the sign of the result?",
+      "options": [
+        "The sign of the second operand.",
+        "The sign of the first operand.",
+        "The result is always positive.",
+        "It depends on the compiler's implementation."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Given `c = 1`, what is the value of `a` after executing `a = c++;`?",
+      "options": [
+        "0",
+        "1",
+        "2",
+        "Undefined"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the key difference between pre-increment (`++c`) and post-increment (`c++`) when used in an expression?",
+      "options": [
+        "Pre-increment increments after evaluation; post-increment increments before.",
+        "Pre-increment increments before evaluation; post-increment increments after.",
+        "There is no difference; they behave identical.",
+        "Pre-increment is for integers only; post-increment is for floats."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which relational operator represents 'Not equal'?",
+      "options": [
+        "<>",
+        "!=",
+        "!==",
+        "~="
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In C, what numerical value represents 'True' in a relational expression?",
+      "options": [
+        "Only 1",
+        "Only -1",
+        "Any nonzero value",
+        "0"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What is the result of `!A` if `A` is False?",
+      "options": [
+        "False",
+        "True",
+        "Null",
+        "0"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which logical operator stops evaluation as soon as the result is known (short-circuiting)?",
+      "options": [
+        "Bitwise AND (&)",
+        "Logical OR (||) and Logical AND (&&)",
+        "Not (!)",
+        "Exclusive OR (^)"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Evaluate the assignment: `a += 2;` if `a` is initially 10.",
+      "options": [
+        "10",
+        "12",
+        "2",
+        "20"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "How is the multiple assignment statement `i = j = 5;` evaluated?",
+      "options": [
+        "Left to right: i is assigned 5, then j is assigned 5.",
+        "Right to left: j is assigned 5, then the result (5) is assigned to i.",
+        "Simultaneously.",
+        "It is invalid syntax."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "The conditional operator `?:` is also known as a:",
+      "options": [
+        "Unary operator",
+        "Binary operator",
+        "Ternary operator",
+        "Bitwise operator"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What is the value of `v` in the expression `v = (0) ? 1 : 2;`?",
+      "options": [
+        "1",
+        "2",
+        "0",
+        "True"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What does the `sizeof` operator return?",
+      "options": [
+        "The memory address of a variable.",
+        "The number of bits used by a variable.",
+        "The number of bytes required to store a variable or type.",
+        "The value stored in the variable."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "In the comma expression `value = (x=10, y=5, x+y);`, what is the final value assigned to `value`?",
+      "options": [
+        "10",
+        "5",
+        "15",
+        "0"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What is the data type of the result of `15 / 10.0`?",
+      "options": [
+        "int",
+        "float (or double)",
+        "char",
+        "long int"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the result of the cast expression `(int)(3.0 / 2.0)`?",
+      "options": [
+        "1.5",
+        "1",
+        "2",
+        "1.0"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which expression correctly rounds a float `y` to the nearest integer?",
+      "options": [
+        "(int)y",
+        "(int)(y + 0.5)",
+        "(int)(y - 0.5)",
+        "round(y)"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which of the following is a valid use of the 'Unary Minus' operator?",
+      "options": [
+        "x - y",
+        "-(x + y)",
+        "x--",
+        "x -= y"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "For the expression `(i < 0) ? 0 : 100`, what happens if `i` is -5?",
+      "options": [
+        "The value is 100.",
+        "The value is 0.",
+        "The expression is invalid.",
+        "The value is -5."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the result of `14 % -4`?",
+      "options": [
+        "-2",
+        "2",
+        "-3",
+        "3"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "The expression `x *= y + 1` is equivalent to:",
+      "options": [
+        "x = x * y + 1",
+        "x = x * (y + 1)",
+        "x = (x * y) + 1",
+        "x = (x * x) + y"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which operator has the lowest precedence in the expression `x = 10, y = 5, x+y`?",
+      "options": [
+        "+",
+        "=",
+        ", (comma)",
+        "All have equal precedence"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "If `x = 14` and `y = 4`, what is `x / y` in integer arithmetic?",
+      "options": [
+        "3.5",
+        "3",
+        "4",
+        "2"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "The Logical OR operator is represented by:",
+      "options": [
+        "&",
+        "&&",
+        "|",
+        "||"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "Which statement about `sizeof(short)` is generally true (though machine dependent)?",
+      "options": [
+        "It returns 4.",
+        "It returns 2.",
+        "It returns 8.",
+        "It returns 1."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the value of `d` after: `c = 2; d = ++c;`?",
+      "options": [
+        "2",
+        "3",
+        "1",
+        "0"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which of the following is a mixed-mode arithmetic expression?",
+      "options": [
+        "5 + 2",
+        "5.0 + 2.0",
+        "5 + 2.0",
+        "a + b (where both are int)"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What does `(float)(5/2)` evaluate to?",
+      "options": [
+        "2.5",
+        "2.0",
+        "2",
+        "Error"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Is the assignment operator `=` the same as the equality operator `==`?",
+      "options": [
+        "Yes, they are interchangeable.",
+        "No, `=` assigns a value, `==` compares values.",
+        "No, `=` compares values, `==` assigns a value.",
+        "Yes, in conditional statements only."
+      ],
+      "correct": 1
+    }
+  ],
+    /* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx */
+"ch6": [
+    {
+      "q": "What are the three basic control structures illustrated in the lecture notes?",
+      "options": [
+        "Sequence, Selection, Repetition",
+        "Input, Process, Output",
+        "While, For, Repeat-Until",
+        "If-Then, Else-If, Case"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In a 'Sequence' control structure, how are instructions executed?",
+      "options": [
+        "Based on a condition being true.",
+        "Repeatedly until a condition is met.",
+        "One after the other in a series.",
+        "In parallel."
+      ],
+      "correct": 3
+    },
+    {
+      "q": "Which control structure represents a 'choice between a number of alternative courses of action'?",
+      "options": [
+        "Sequence",
+        "Selection (Decision making)",
+        "Repetition",
+        "Iteration"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "In the general format of an IF-THEN-ELSE structure, which part is optional?",
+      "options": [
+        "The IF condition",
+        "The THEN block",
+        "The ELSE block",
+        "The ENDIF statement"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "What happens if the condition in an IF statement evaluates to 'false' and there is an ELSE block?",
+      "options": [
+        "The program terminates.",
+        "The statements in the IF block are executed.",
+        "The statements in the ELSE block are executed.",
+        "Nothing happens, and execution continues after ENDIF."
+      ],
+      "correct": 3
+    },
+    {
+      "q": "Which relational operator represents 'Not Equals To' in the context of the lecture notes?",
+      "options": [
+        "!=",
+        "< >",
+        "==",
+        "~="
+      ],
+      "correct": 2
+    },
+    {
+      "q": "In the activity where a discount is given if `customerAge >= 65`, what is the discount value for customers under 65?",
+      "options": [
+        "0.10",
+        "0",
+        "0.05",
+        "Undefined"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which logical operator is used to combine two conditions where *both* must be true (e.g., calls > 100 AND minutes > 500)?",
+      "options": [
+        "OR",
+        "NOT",
+        "AND",
+        "XOR"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "In a nested IF structure, an `else` is associated with:",
+      "options": [
+        "The nearest preceding `if` that is not already matched with an `else`.",
+        "The first `if` in the block.",
+        "Any `if` chosen by the programmer.",
+        "The main function."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is an alternative control structure to nested `if-else` for handling multiple selections based on a single variable?",
+      "options": [
+        "While loop",
+        "Case structure",
+        "For loop",
+        "Sequence"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "In the `Case` structure example for employee types, what happens if the `EmployeeType` does not match 'M', 'S', or 'W'?",
+      "options": [
+        "The program crashes.",
+        "The `else` case is executed (HourlyPayRate = 10).",
+        "The HourlyPayRate remains undefined.",
+        "It defaults to 'M'."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What is the primary purpose of indentation in code segments like nested `if` statements?",
+      "options": [
+        "To make the code compile faster.",
+        "To improve readability.",
+        "To reduce memory usage.",
+        "It is required by the compiler."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "In the speeding fine activity, what is the fine for a speed of 85 kmph?",
+      "options": [
+        "0",
+        "2,500",
+        "5,000",
+        "7,500"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "Which loop structure checks the condition *before* executing the statements within the loop?",
+      "options": [
+        "Repeat-Until",
+        "Do-While",
+        "While loop",
+        "Post-test loop"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "In a `While` loop, if the condition is initially false, how many times are the statements inside the loop executed?",
+      "options": [
+        "Once",
+        "Infinite times",
+        "Zero times",
+        "Twice"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "Which loop structure executes the statements *at least once* because the condition is checked at the end?",
+      "options": [
+        "While loop",
+        "For loop",
+        "Repeat-Until loop",
+        "If-Else"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "In the `Repeat-Until` loop structure shown, when does the loop terminate?",
+      "options": [
+        "When the condition evaluates to true.",
+        "When the condition evaluates to false.",
+        "It never terminates.",
+        "After a fixed number of iterations."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the output of the loop: `while (Y <= X) { Y = Y + 2; X = X - 1; display X + Y }` given X=5, Y=-2?",
+      "options": [
+        "4, 5, 6",
+        "4, 6",
+        "3, 7",
+        "4, 5, 5"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In the algorithm to print natural numbers from 1 to 10 using a `while` loop, what is the initial value of `count`?",
+      "options": [
+        "0",
+        "1",
+        "10",
+        "Undefined"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "When converting an algorithm to C, how is the `local data` section typically handled?",
+      "options": [
+        "It is written as a comment.",
+        "It is converted to variable declarations (e.g., `int Value1;`).",
+        "It is ignored completely.",
+        "It is placed in a separate header file."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "In the `repeat...until` example for squaring a number, the loop continues until:",
+      "options": [
+        "Number > 0",
+        "Number <= 0",
+        "Square > 100",
+        "Number == 0"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is a characteristic of a 'finite' algorithm?",
+      "options": [
+        "It has infinite loops.",
+        "It arrives at a solution within a finite time.",
+        "It uses infinite memory.",
+        "It has no input."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "In the algorithm to print numbers from N to 1 (reverse order), the `count` is initialized to:",
+      "options": [
+        "1",
+        "0",
+        "N",
+        "10"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "Which loop is best suited when the number of iterations is known in advance (e.g., counting from 1 to 10)?",
+      "options": [
+        "For loop",
+        "While loop",
+        "Repeat-Until",
+        "Infinite loop"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In the algorithm conversion example, `Display \"Enter two values\"` in pseudocode becomes what in C?",
+      "options": [
+        "cin >> \"Enter two values\";",
+        "printf(\" Enter two values \\n\");",
+        "scanf(\"Enter two values\");",
+        "echo \"Enter two values\";"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "For the speeding fine logic: `if (speed < 50) fine=0; else if (speed < 70) fine=2500; ...`. If speed is 70, what is the fine?",
+      "options": [
+        "0",
+        "2500",
+        "5000",
+        "7500"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "The `break` statement is often used in `case` structures to:",
+      "options": [
+        "Terminate the program.",
+        "Skip the rest of the cases and exit the switch block.",
+        "Restart the loop.",
+        "Define a variable."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "In C, the `!=` operator means:",
+      "options": [
+        "Assignment",
+        "Equality check",
+        "Not equal",
+        "Logical NOT"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "If `v1 = 15.0` and `v2 = 0.5`, what is the result of the condition `if (v1 - v2 > 9.0)`?",
+      "options": [
+        "True",
+        "False",
+        "Error",
+        "Undefined"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In the problem to find the highest value among 5 integers, what is a necessary step inside the loop?",
+      "options": [
+        "Set the highest value to 0 every time.",
+        "Compare the current input with the current highest value and update if necessary.",
+        "Add all numbers together.",
+        "Print every number entered."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which pseudocode keyword corresponds to the C function `scanf`?",
+      "options": [
+        "Display",
+        "Print",
+        "Input",
+        "Write"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "What is the equivalent C syntax for the pseudocode assignment `Sum = Value1 + Value2`?",
+      "options": [
+        "Sum == Value1 + Value2;",
+        "Sum : Value1 + Value2;",
+        "Sum = Value1 + Value2;",
+        "Sum := Value1 + Value2;"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "In the algorithm `Nnumbers3` (print 1 to N), what is the condition for the while loop?",
+      "options": [
+        "count < N",
+        "count > N",
+        "count <= N",
+        "count >= N"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "What does the `repeat...until` structure translate to in standard C?",
+      "options": [
+        "while() { ... }",
+        "do { ... } while(condition);",
+        "for() { ... }",
+        "repeat() ... until();"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Why is `void main()` used in the C program example instead of `main` from the algorithm?",
+      "options": [
+        "It defines the return type of the function.",
+        "It is the name of the algorithm.",
+        "It declares local variables.",
+        "It is a comment."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In the flowchart for selection (Slide 8), the diamond shape represents:",
+      "options": [
+        "Process",
+        "Input/Output",
+        "Decision/Condition",
+        "Start/End"
+      ],
+      "correct": 3
+    },
+    {
+      "q": "If `TotalCost` is 150, and the logic is `if (TotalCost > 100) Discount=10 else Discount=0`, what is `Discount`?",
+      "options": [
+        "0",
+        "10",
+        "100",
+        "150"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which logical operator allows an action if *either* of two conditions is true?",
+      "options": [
+        "AND",
+        "OR",
+        "NOT",
+        "XOR"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "In the code segment analyzing `v1=15.0`, `v2=0.5`, does the condition `if (v1 > 14.0)` execute?",
+      "options": [
+        "Yes, it displays \"v1 is greater than fourteen\".",
+        "No, because the outer `else` block is skipped.",
+        "Yes, but it prints nothing.",
+        "No, because 15.0 is not greater than 14.0."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the purpose of the `end` keyword in the pseudocode algorithms?",
+      "options": [
+        "To terminate a loop or selection block (e.g., end while, end if).",
+        "To define variables.",
+        "To input data.",
+        "To start the program."
+      ],
+      "correct": 1
+    }
+  ],
+  "ch7": [
+    {
+      "q": "What is the simplest general form of an `if` statement in C?",
+      "options": [
+        "if expression statement",
+        "if (expression) statement",
+        "if {expression} statement",
+        "if expression then statement"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In an `if` statement, the associated statement is executed only if the expression evaluates to:",
+      "options": [
+        "Zero",
+        "A nonzero value (true)",
+        "A negative value only",
+        "A positive value only"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "If the expression in an `if` statement evaluates to zero, what happens?",
+      "options": [
+        "The program crashes.",
+        "The statement is executed.",
+        "The statement is ignored.",
+        "The compiler throws an error."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which flow control structure allows a choice between two alternative courses of action?",
+      "options": [
+        "if...else",
+        "while loop",
+        "for loop",
+        "break"
+      ],
+      "correct": 0
+    },
+    {
+      "q": "In a nested `if...else` structure, which `if` is an `else` clause associated with by default?",
+      "options": [
+        "The first `if` in the block.",
+        "The closest preceding unmatched `if`.",
+        "Any `if` chosen by the programmer using comments.",
+        "The `if` with the same indentation level."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "How can you force an `else` clause to associate with an outer `if` instead of the closest inner `if`?",
+      "options": [
+        "Use comments to indicate association.",
+        "Use indentation.",
+        "Use braces `{}` to define a block for the inner `if`.",
+        "It is not possible in C."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What is the purpose of the `switch` statement?",
+      "options": [
+        "To switch variables in memory.",
+        "To chose a particular group of statements from several available groups based on an expression.",
+        "To terminate the program.",
+        "To loop through an array."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "The expression within a `switch` statement must result in which type of value?",
+      "options": [
+        "Float",
+        "Double",
+        "Integer (or character)",
+        "String"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "In a `switch` statement, what is the function of the `break` statement?",
+      "options": [
+        "To pause the program.",
+        "To signal the end of a particular case and terminate the switch execution.",
+        "To jump to the default case.",
+        "To restart the switch statement."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What happens if a `break` statement is omitted in a `switch` case?",
+      "options": [
+        "The compiler generates an error.",
+        "The program execution continues into the next case (fall-through).",
+        "The switch statement terminates immediately.",
+        "The program crashes."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the purpose of the `default` label in a `switch` statement?",
+      "options": [
+        "It is mandatory and must always be executed.",
+        "It is executed if none of the case labels match the expression value.",
+        "It defines the first case to be checked.",
+        "It resets the switch expression."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Can multiple case labels be associated with the same group of statements?",
+      "options": [
+        "No, each case must have unique statements.",
+        "Yes, by listing them sequentially (e.g., case 'a': case 'A':).",
+        "Yes, but only if they are numbers.",
+        "No, it causes a syntax error."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which operator can be used as a shorthand for simple `if...else` statements?",
+      "options": [
+        "The logical AND operator (&&)",
+        "The conditional operator (?:)",
+        "The comma operator (,)",
+        "The modulus operator (%)"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Evaluate `y` given: `x = 2; y = (x <= 2) ? (1.5 * x + 3) : (2 * x + 5);`",
+      "options": [
+        "6",
+        "9",
+        "6.0",
+        "8"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "In the example `switch (choice = getchar())`, what is happening?",
+      "options": [
+        "The switch is comparing the function `getchar` itself.",
+        "A character is input, assigned to `choice`, and then used as the switch expression.",
+        "The variable `choice` is hardcoded.",
+        "It is invalid syntax."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which logical operator allows you to check if a character `c` is a lowercase letter (a-z)?",
+      "options": [
+        "`c >= 'a' || c <= 'z'`",
+        "`c >= 'a' && c <= 'z'`",
+        "`c == 'a' && c == 'z'`",
+        "`c > 'a' || c < 'z'`"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the correct C syntax for 'Not Equal To'?",
+      "options": [
+        "<>",
+        "!==",
+        "!=",
+        "~="
+      ],
+      "correct": 2
+    },
+    {
+      "q": "In the calculator program example, why is `if (value2 == 0)` checked before division?",
+      "options": [
+        "To check if the number is negative.",
+        "To prevent a division by zero error.",
+        "To ensure the result is an integer.",
+        "To optimize speed."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which statement best describes the difference between `if` and `switch`?",
+      "options": [
+        "`switch` can handle complex logical expressions (ranges, float comparisons) better than `if`.",
+        "`if` checks a single value for equality, while `switch` evaluates a boolean expression.",
+        "`switch` is generally preferred for selecting among a set of discrete constant values, while `if` is for general boolean logic.",
+        "There is no difference; they are interchangeable in all scenarios."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "In the salary calculation example, `salary = (x != 40) ? ((x < 40) ? ... : ...) : 300;` demonstrates what feature?",
+      "options": [
+        "Nested if statements",
+        "Nested conditional operators",
+        "Switch statement",
+        "Function recursion"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What data type is `number_to_test % 2` in the odd/even switch example?",
+      "options": [
+        "float",
+        "char",
+        "int",
+        "boolean"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "If `operator` is '/' and `value2` is 0 in the calculator program, what is the output?",
+      "options": [
+        "Infinity",
+        "0",
+        "Division by zero",
+        "Unknown operator"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which of the following is a valid case label?",
+      "options": [
+        "case x > 5:",
+        "case 1.5:",
+        "case 'A':",
+        "case \"String\":"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What happens if you define two `case` labels with the same value in a `switch` statement?",
+      "options": [
+        "Both are executed.",
+        "The first one is used.",
+        "The second one is used.",
+        "It causes a compilation error (duplicate case value)."
+      ],
+      "correct": 3
+    },
+    {
+      "q": "To remove common statements from an `if...else` block (as shown in slide 21), where should the common statement `count++;` be placed?",
+      "options": [
+        "Inside the `if` block only.",
+        "Inside the `else` block only.",
+        "After the `if...else` structure.",
+        "Before the `if...else` structure."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "In the expression `flag = (x < 0) ? 0 : 1;`, if `x` is -5, what is `flag`?",
+      "options": [
+        "1",
+        "0",
+        "-5",
+        "True"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "When converting an algorithm's conditional statement to C, `then` is replaced by?",
+      "options": [
+        "A semicolon",
+        "A comma",
+        "Nothing (it is omitted) or braces `{`",
+        "The keyword `then`"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "The `scanf` format string `\"%f%c%f\"` expects input in what order?",
+      "options": [
+        "Character, Float, Float",
+        "Float, Character, Float",
+        "Float, Float, Character",
+        "Three floats"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Why is the `&` operator used in `scanf`?",
+      "options": [
+        "To denote a logical AND.",
+        "To pass the memory address of the variable so `scanf` can modify it.",
+        "It is a syntax error.",
+        "To declare the variable."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which keyword is used to start the decision-making block?",
+      "options": [
+        "loop",
+        "decision",
+        "if",
+        "check"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "In the 'ClassifyCharacter' example, what logic is used to identify a digit?",
+      "options": [
+        "`c >= 0 && c <= 9` (integer comparison)",
+        "`c >= '0' && c <= '9'` (character comparison)",
+        "`isdigit(c)`",
+        "`c == 0 || c == 9`"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What output is produced by `printf(\"%.2f\", val)`?",
+      "options": [
+        "Integer value",
+        "Float value with 2 decimal places",
+        "String value",
+        "Float value with width 2"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "If `x` is 40 in the salary example, which part of the conditional operator is executed?",
+      "options": [
+        "`4 * x + 100`",
+        "`4.5 * x + 150`",
+        "`300`",
+        "None"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "The conditional operator `?:` is a _____ operator.",
+      "options": [
+        "Unary",
+        "Binary",
+        "Ternary",
+        "Bitwise"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Can a `switch` statement be nested inside another `switch` statement?",
+      "options": [
+        "No, it is not allowed.",
+        "Yes, but only one level deep.",
+        "Yes, a switch can be part of the statement sequence of an outer switch.",
+        "Only if they use different variable types."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which logical operator combines the check for uppercase OR lowercase alphabets?",
+      "options": [
+        "&&",
+        "||",
+        "!",
+        "=="
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In C, `else if` is:",
+      "options": [
+        "A single keyword `elseif`.",
+        "Written as `else` followed by `if`.",
+        "Not supported.",
+        "Replaced by `elif`."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What happens if you input `5 + 3` into the calculator program?",
+      "options": [
+        "It outputs 8.00.",
+        "It outputs 5.00.",
+        "It outputs 'Unknown operator'.",
+        "It crashes."
+      ],
+      "correct": 0
+    },
+    {
+      "q": "For `case 'r': case 'R': ... break;`, the code executes for:",
+      "options": [
+        "Only 'r'",
+        "Only 'R'",
+        "Both 'r' and 'R'",
+        "Neither"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "In the absolute value example, `number = -number` is executed when:",
+      "options": [
+        "number is positive",
+        "number is zero",
+        "number is negative",
+        "always"
+      ],
+      "correct": 2
+    }
+    ],
+    "ch8": [
+    {
+      "q": "Which of the following are the three looping statements available in C?",
+      "options": [
+        "while, for, repeat-until",
+        "while, do-while, for",
+        "for, foreach, while",
+        "do, repeat, until"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In a `while` loop, when is the control expression evaluated?",
+      "options": [
+        "After the execution of the statement.",
+        "Before the execution of the statement.",
+        "Simultaneously with the statement.",
+        "Only once at the beginning of the program."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the minimum number of times a `do-while` loop is guaranteed to execute?",
+      "options": [
+        "0",
+        "1",
+        "2",
+        "Infinite"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "How does the `while` loop differ from the `do-while` loop regarding minimum execution?",
+      "options": [
+        "While executes at least once; Do-while can execute zero times.",
+        "While executes zero times min; Do-while executes at least once.",
+        "Both execute at least once.",
+        "Both can execute zero times."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which character represents the 'Comma Operator' used to separate parts in a `for` loop?",
+      "options": [
+        ";",
+        ":",
+        ",",
+        "."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "In the general form of a `for` loop `for(int_expression; loop_condition; loop-expression)`, what is the purpose of `int_expression`?",
+      "options": [
+        "To check the condition for termination.",
+        "To alter the loop control variable.",
+        "To initialize the loop index parameter.",
+        "To terminate the loop."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What happens if the `loop_condition` in a `for` loop evaluates to false initially?",
+      "options": [
+        "The loop executes once.",
+        "The loop body is skipped and execution continues after the loop.",
+        "The program crashes.",
+        "The loop becomes an infinite loop."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which statement is used to bypass the remainder of the current loop iteration and proceed to the next pass?",
+      "options": [
+        "break",
+        "exit",
+        "continue",
+        "return"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What is the effect of the `break` statement when encountered inside a loop?",
+      "options": [
+        "It skips the current iteration.",
+        "It restarts the loop.",
+        "It terminates the loop immediately.",
+        "It pauses the program."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Consider the loop `for (j=1000; j>0; j--);`. What is the purpose of the semicolon at the end?",
+      "options": [
+        "It is a syntax error.",
+        "It represents a null or empty statement, creating a time delay loop.",
+        "It initializes the variable `j`.",
+        "It breaks the loop immediately."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In a nested loop structure, which rule must be followed?",
+      "options": [
+        "The inner loop can overlap with the outer loop.",
+        "The inner loop must be completely embedded within the outer loop.",
+        "Both loops must use the same control variable.",
+        "An outer loop cannot contain a `while` loop."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In the statement `for (n=1, m=50; n<m; n++, m--)`, what is the function of the comma operator?",
+      "options": [
+        "To create a compound condition.",
+        "To allow multiple initializations and multiple increments within the loop syntax.",
+        "To separate the condition from the body.",
+        "It acts as a decimal point."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the output of the following segment? `for(x=1; x<=10; x++) { if(x==5) break; printf(\"%d\", x); }`",
+      "options": [
+        "12345",
+        "1234",
+        "12345678910",
+        "5"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "When using `continue` in a loop summing numbers, if `x < 0` triggers `continue`, what happens to the sum addition `sum += x`?",
+      "options": [
+        "It is executed for the negative number.",
+        "It is ignored for that iteration.",
+        "The loop terminates.",
+        "The sum is reset to 0."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which logical expression would likely control a loop that runs while `i` is less than 20 AND `sum` is less than 100?",
+      "options": [
+        "i < 20 || sum < 100",
+        "i < 20 && sum < 100",
+        "i > 20 && sum > 100",
+        "i == 20 && sum == 100"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In a `do-while` loop, where is the semicolon placed?",
+      "options": [
+        "After `do`.",
+        "After the statement body.",
+        "After the `while(expression)` condition.",
+        "It is not required."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "If a `while` loop condition is initially false, how many times does the loop body execute?",
+      "options": [
+        "1",
+        "0",
+        "Infinite",
+        "Depends on the compiler"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which loop structure is best suited when the number of iterations is known in advance?",
+      "options": [
+        "while",
+        "do-while",
+        "for",
+        "switch"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "In the code `for (; m!=100; )`, what parts of the `for` loop are omitted?",
+      "options": [
+        "Condition and Increment",
+        "Initialization and Increment",
+        "Initialization and Condition",
+        "None"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What happens if a `break` statement is used in a nested inner loop?",
+      "options": [
+        "It terminates both the inner and outer loops.",
+        "It terminates only the inner loop.",
+        "It restarts the outer loop.",
+        "It causes a compilation error."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the correct syntax for a `while` loop?",
+      "options": [
+        "while expression statement",
+        "while (expression) statement",
+        "while {expression} statement",
+        "do while (expression)"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In the diagram for a `while` loop, what shape represents the expression/condition?",
+      "options": [
+        "Rectangle",
+        "Diamond",
+        "Oval",
+        "Parallelogram"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which loop evaluates the expression at the *end* of the loop?",
+      "options": [
+        "for",
+        "while",
+        "do-while",
+        "if-else"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What is the value of `posnum` if `continue` is executed in the averaging example?",
+      "options": [
+        "It is incremented.",
+        "It remains unchanged for that iteration.",
+        "It is reset to 0.",
+        "It becomes negative."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which statement correctly initializes two variables in a `for` loop?",
+      "options": [
+        "for (n=1; m=50; ...)",
+        "for (n=1, m=50; ...)",
+        "for (n=1 : m=50; ...)",
+        "for (int n=1 m=50; ...)"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "The `break` statement can be used in which of the following?",
+      "options": [
+        "Only loops",
+        "Only switch statements",
+        "Loops and switch statements",
+        "If statements only"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "If the `loop_expression` (increment) is omitted in a `for` loop header, where should the increment usually occur?",
+      "options": [
+        "It cannot be omitted.",
+        "Inside the loop body.",
+        "Before the loop.",
+        "After the loop."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What does `count++` do in a loop?",
+      "options": [
+        "Decrements count.",
+        "Increments count by 1.",
+        "Checks if count is positive.",
+        "Resets count."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In the `digit` display example, `digit` is initialized to:",
+      "options": [
+        "1",
+        "0",
+        "10",
+        "Undefined"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "When calculating the average of `n` numbers, the division `sum/n` should happen:",
+      "options": [
+        "Inside the loop.",
+        "Before the loop.",
+        "After the loop terminates.",
+        "In the loop condition."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which symbol is used to enclose a compound statement (block of code) in a loop?",
+      "options": [
+        "( )",
+        "[ ]",
+        "{ }",
+        "< >"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "In the example `for (digit = 0; digit <= 9; ++digit)`, what is the loop condition?",
+      "options": [
+        "digit = 0",
+        "digit <= 9",
+        "++digit",
+        "digit"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Can a `while` loop be used to implement a sentinel-controlled loop (e.g., input until -1)?",
+      "options": [
+        "Yes, it is common.",
+        "No, only `for` loops can do that.",
+        "No, C does not support sentinel loops.",
+        "Only if using `goto`."
+      ],
+      "correct": 0
+    },
+    {
+      "q": "What happens if you put a semicolon immediately after `while (expression)` like `while (i<10); { i++; }`?",
+      "options": [
+        "It works normally.",
+        "It creates an infinite loop if `i` is less than 10 (and `i` is not modified in condition).",
+        "It executes the block once.",
+        "It causes a syntax error."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which loop is structurally defined as `repeat...until` in algorithm pseudocode but translates to `do-while` in C?",
+      "options": [
+        "Pre-test loop",
+        "Post-test loop",
+        "For loop",
+        "Infinite loop"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In a nested loop, the `inner` loop executes how many times?",
+      "options": [
+        "Once for every iteration of the outer loop.",
+        "Only once total.",
+        "The same number of times as the outer loop total.",
+        "Before the outer loop starts."
+      ],
+      "correct": 0
+    },
+    {
+      "q": "The expression `x += 5` inside a loop is equivalent to:",
+      "options": [
+        "x = 5",
+        "x = x + 5",
+        "x = x * 5",
+        "x = x / 5"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the output of `int i = 0; do { printf(\"%d\", i); i++; } while (i < 0);`?",
+      "options": [
+        "No output",
+        "0",
+        "01",
+        "Infinite loop"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "If `continue` is used in a `for` loop, control transfers to:",
+      "options": [
+        "The initialization expression.",
+        "The loop condition.",
+        "The loop increment/decrement expression.",
+        "The statement following the loop."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which of the following creates an infinite loop?",
+      "options": [
+        "for (;;)",
+        "while (0)",
+        "do {} while (0);",
+        "for (i=0; i<10; i++)"
+      ],
+      "correct": 0
+    }
+  ],
+  "ch9": [
+    {
+      "q": "What is the primary motivation for using an Array data structure as described in the notes?",
+      "options": [
+        "To store different data types in a single variable.",
+        "To handle large volumes of data efficiently by facilitating storage and access.",
+        "To dynamically allocate memory during runtime.",
+        "To eliminate the need for variables."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which of the following best defines an Array in C?",
+      "options": [
+        "A dynamic collection of elements of varying data types.",
+        "A fixed-size sequenced collection of elements of the same data type stored in consecutive memory.",
+        "A non-linear data structure used for linking data items.",
+        "A collection of functions grouped under a common name."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In the declaration `int score[10];`, what does the number 10 represent?",
+      "options": [
+        "The value of the first element.",
+        "The maximum value the array can hold.",
+        "The size of the array, reserving 10 consecutive memory locations.",
+        "The index of the last element."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "If an array is declared as `int vector[5];`, what is the index of the last element?",
+      "options": [
+        "5",
+        "4",
+        "0",
+        "Unknown"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "When initializing an array like `int digits[10] = {1, 2, 3};`, what happens to the remaining elements?",
+      "options": [
+        "They contain garbage values.",
+        "They are automatically set to zero.",
+        "They cause a compilation error.",
+        "They take the value of the last specified element (3)."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the implicit size of the array in the declaration `int digits[] = {1, 2, 3, 4, 5, 6};`?",
+      "options": [
+        "10",
+        "5",
+        "6",
+        "Unlimited"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which of the following operations is NOT permitted directly on entire arrays in C?",
+      "options": [
+        "Passing an array to a function.",
+        "Accessing an element via index.",
+        "Direct assignment (e.g., `array1 = array2;`).",
+        "Initializing during declaration."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "How must a character array be declared to store the string \"COLOMBO\" correctly?",
+      "options": [
+        "char city[7] = \"COLOMBO\";",
+        "char city[8] = \"COLOMBO\";",
+        "char city[] = {'C','O','L','O','M','B','O'};",
+        "string city = \"COLOMBO\";"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What character is automatically added to the end of a string constant like \"GOOD\"?",
+      "options": [
+        "The newline character '\\n'",
+        "The null terminator '\\0'",
+        "The end-of-file marker EOF",
+        "A blank space"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Why is the declaration `char colour[3] = \"RED\";` considered incorrect in the context of strings?",
+      "options": [
+        "Because \"RED\" has 4 characters.",
+        "Because arrays cannot be initialized with quotes.",
+        "Because there is no space for the null terminator '\\0'.",
+        "Because color must be declared as int."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "When using `scanf(\"%s\", name);` to read a string, why is the ampersand (`&`) not required before `name`?",
+      "options": [
+        "Because `scanf` for strings does not use addresses.",
+        "Because the array name itself acts as the address of the start of the array.",
+        "It is actually required; omitting it is an error.",
+        "Because `name` is a constant."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the limitation of using `scanf(\"%s\", text);` for string input?",
+      "options": [
+        "It cannot read numbers.",
+        "It terminates input at the first whitespace character.",
+        "It cannot read more than 10 characters.",
+        "It requires a specific header file."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which `scanf` format specifier allows reading a line of text including spaces until a newline is encountered?",
+      "options": [
+        "%s",
+        "%line",
+        "%[^\n]",
+        "%c"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What does the function `strcmp(s1, s2)` return if `s1` is essentially equal to `s2`?",
+      "options": [
+        "1",
+        "True",
+        "0",
+        "-1"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "The function `strcat(s1, s2)` performs which operation?",
+      "options": [
+        "Copies s2 into s1.",
+        "Compares s1 and s2.",
+        "Concatenates s2 onto the end of s1.",
+        "Calculates the length of both strings."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which header file must be included to use functions like `strcpy`, `strcat`, and `strlen`?",
+      "options": [
+        "ctype.h",
+        "stdlib.h",
+        "string.h",
+        "stdio.h"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What does `strlen(s1)` return?",
+      "options": [
+        "The total size of the array `s1` in bytes.",
+        "The number of characters in `s1` excluding the null terminator.",
+        "The number of characters in `s1` including the null terminator.",
+        "The memory address of `s1`."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which function copies at most `n` characters from `s2` to `s1`?",
+      "options": [
+        "strcpy(s1, s2)",
+        "strncopy(s1, s2, n)",
+        "strncpy(s1, s2, n)",
+        "memcpy(s1, s2, n)"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "In the declaration `int table[5][3];`, how many rows and columns are defined?",
+      "options": [
+        "3 rows and 5 columns",
+        "5 rows and 3 columns",
+        "5 rows and 5 columns",
+        "15 rows and 1 column"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "How are elements of a two-dimensional array stored in memory in C?",
+      "options": [
+        "Column by column.",
+        "Randomly.",
+        "Row by row (consecutive memory locations).",
+        "As a linked list."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which of the following correctly initializes a 2D array `int values[2][3]`?",
+      "options": [
+        "{1, 2, 3, 4, 5, 6}",
+        "{{1, 2, 3}, {4, 5, 6}}",
+        "Both A and B are correct.",
+        "Neither A nor B is correct."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "If `int table[2][3] = { {1, 2, 3}, {4, 5, 6} };`, what is the value of `table[1][0]`?",
+      "options": [
+        "1",
+        "2",
+        "4",
+        "5"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which function from `ctype.h` checks if a character is a digit?",
+      "options": [
+        "isnumber()",
+        "isint()",
+        "isdigit()",
+        "checkdigit()"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What is the return value of `strcmp(s1, s2)` if `s1` comes after `s2` lexicographically (i.e., `s1 > s2`)?",
+      "options": [
+        "0",
+        "A value less than 0",
+        "A value greater than 0",
+        "Undefined"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "To declare a string array (table of strings) to store names like \"Gamunu\", \"Mala\", etc., which syntax is appropriate?",
+      "options": [
+        "char names[4];",
+        "char names[4][8];",
+        "int names[4][8];",
+        "string names[4];"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In the string array `char names[4][8]`, how do you access the i-th name string?",
+      "options": [
+        "names[i][0]",
+        "names[0][i]",
+        "names[i]",
+        "&names[i]"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What is the effect of `strncpy` if the source string is shorter than `n`?",
+      "options": [
+        "It stops copying immediately.",
+        "It pads the destination with null characters until `n` characters are written.",
+        "It causes a runtime error.",
+        "It restarts copying from the beginning."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which loop structure is most commonly used to process arrays?",
+      "options": [
+        "if-else",
+        "switch",
+        "for loop",
+        "do-while"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "In the array declaration `double records[L][M][N];`, how many dimensions does the array have?",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "If `int A[5] = {10, 20};`, what is the value of `A[3]`?",
+      "options": [
+        "10",
+        "20",
+        "0",
+        "Garbage value"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What is incorrect about the assignment `str1 = \"GOOD\";` where `str1` is a char array?",
+      "options": [
+        "Nothing is wrong.",
+        "Arrays cannot be assigned values using the assignment operator `=` after declaration.",
+        "\"GOOD\" is not a string.",
+        "The semicolon is misplaced."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "To copy one string variable `str1` to another `str2`, which function should be used?",
+      "options": [
+        "str2 = str1;",
+        "strcopy(str2, str1);",
+        "strcpy(str2, str1);",
+        "string_copy(str2, str1);"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "The header file `ctype.h` is required for which set of functions?",
+      "options": [
+        "String manipulation (strcpy, strcat).",
+        "Input/Output (printf, scanf).",
+        "Character testing and conversion (isalpha, isdigit).",
+        "Mathematical functions."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "What is the index of the first element in a C array?",
+      "options": [
+        "1",
+        "0",
+        "-1",
+        "Programmable"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In a 2D array `matrix[3][3]`, the element `matrix[1][2]` is in which row and column (using 1-based counting for explanation)?",
+      "options": [
+        "Row 1, Column 2",
+        "Row 2, Column 3",
+        "Row 1, Column 3",
+        "Row 2, Column 2"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which function appends `n` characters from `s2` to `s1`?",
+      "options": [
+        "strcat(s1, s2)",
+        "strncat(s1, s2, n)",
+        "strcpy(s1, s2, n)",
+        "strappend(s1, s2, n)"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What happens if you try to access `score[10]` in an array declared as `int score[10];`?",
+      "options": [
+        "It returns the last element.",
+        "It returns 0.",
+        "It accesses memory outside the array (undefined behavior/error).",
+        "It resizes the array."
+      ],
+      "correct": 2
+    },
+    {
+      "q": "If `char s1[] = \"Hello\";` and `char s2[] = \"Julius!\";`, what is the result of `strncat(s1, s2, 4);` if `s1` has sufficient size?",
+      "options": [
+        "\"HelloJulius!\"",
+        "\"HelloJuli\"",
+        "\"Hello Juli\"",
+        "\"JuliHello\""
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which function checks if a character is a whitespace character?",
+      "options": [
+        "isblank()",
+        "isspace()",
+        "iswhite()",
+        "isnull()"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the syntax to initialize a 2D array `int values[3][4]` with all zeros implicitly (by providing fewer values)?",
+      "options": [
+        "int values[3][4] = {0};",
+        "int values[3][4] = (0);",
+        "int values[3][4] = [0];",
+        "int values[3][4] = 0;"
+      ],
+      "correct": 0
+    },
+    {
+      "q": "Can you declare an array without a size if you initialize it immediately, e.g., `int arr[] = {1, 2, 3};`?",
+      "options": [
+        "No, size is mandatory.",
+        "Yes, the compiler infers the size.",
+        "Yes, but it defaults to size 10.",
+        "No, it causes a runtime error."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What logic is used to exchange two values `A` and `B` in an array?",
+      "options": [
+        "A = B; B = A;",
+        "temp = A; A = B; B = temp;",
+        "A = temp; temp = B; B = A;",
+        "swap(A, B);"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "In the memory layout of a 2D array `matrix[3][3]`, which element immediately follows `matrix[0][2]`?",
+      "options": [
+        "matrix[0][3]",
+        "matrix[1][0]",
+        "matrix[1][1]",
+        "matrix[2][0]"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the output of `printf(\"%s\", s2);` after `strncpy(s2, \"Hello\", 4);` if `s2` was empty?",
+      "options": [
+        "Hello",
+        "Hell",
+        "Hell\\0",
+        "Undefined (might miss null terminator)"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "Which function is used to convert a character to uppercase?",
+      "options": [
+        "isupper()",
+        "to_upper()",
+        "toupper()",
+        "upper()"
+      ],
+      "correct": 2
+    },
+    {
+      "q": "Which logical error occurs if you write `if (name == \"Computing\")` to compare strings?",
+      "options": [
+        "Syntax error.",
+        "It compares memory addresses instead of string content.",
+        "It assigns \"Computing\" to name.",
+        "It works correctly."
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the maximum number of characters `char city[8]` can safely hold as a string?",
+      "options": [
+        "8",
+        "7",
+        "6",
+        "9"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "The `isprint(c)` function checks for:",
+      "options": [
+        "Printable characters including space.",
+        "Only alphabetic characters.",
+        "Printing instructions.",
+        "Only digits."
+      ],
+      "correct": 0
+    },
+    {
+      "q": "When processing a 2D array with nested loops, the outer loop typically controls the:",
+      "options": [
+        "Columns",
+        "Rows",
+        "Individual elements",
+        "Data types"
+      ],
+      "correct": 1
+    },
+    {
+      "q": "What is the correct way to input a string containing spaces using `scanf`?",
+      "options": [
+        "scanf(\"%s\", str);",
+        "scanf(\"%[^\n]\", str);",
+        "scanf(\"%space\", str);",
+        "scanf(\"%line\", str);"
+      ],
+      "correct": 1
+    }
+  ]
+
+
+    };
+
+    // --- STATE & UTILS ---
+    let currentChapter = [];
+    let currentIndex = 0;
+    let score = 0;
+    let aiCache = {}; 
+
+    const ui = {
+        screens: { menu: document.getElementById('screen-menu'), quiz: document.getElementById('screen-quiz'), result: document.getElementById('screen-result') },
+        text: document.getElementById('question-text'),
+        options: document.getElementById('options-container'),
+        progress: document.getElementById('quiz-progress'),
+        aiBox: document.getElementById('ai-container'),
+        aiContent: document.getElementById('ai-content'),
+        nextBtn: document.getElementById('next-btn'),
+        scoreDisplay: document.getElementById('final-score'),
+        msgDisplay: document.getElementById('final-msg')
+    };
+
+    // --- APP LOGIC ---
+    function startChapter(ch) {
+        if(!database[ch] || database[ch].length === 0) return alert("Chapter coming soon!");
+        currentChapter = database[ch];
+        currentIndex = 0;
+        score = 0;
+        aiCache = {};
+        
+        currentChapter.sort(() => Math.random() - 0.5);
+        
+        showScreen('quiz');
+        renderQuestion();
+    }
+
+    function renderQuestion() {
+        const q = currentChapter[currentIndex];
+        
+        // Use innerHTML to allow math inside question text
+        ui.text.innerHTML = `${currentIndex + 1}. ${q.q}`;
+        ui.progress.innerText = `Question ${currentIndex + 1}/${currentChapter.length}`;
+        ui.options.innerHTML = '';
+        ui.aiBox.classList.remove('show');
+        ui.aiContent.innerHTML = '';
+        ui.nextBtn.disabled = true;
+
+        q.options.forEach((opt, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'option';
+            btn.innerHTML = opt; // Use innerHTML for math in options
+            btn.onclick = () => handleAnswer(idx, btn);
+            ui.options.appendChild(btn);
+        });
+
+        // Trigger MathJax to render the new content
+        if (window.MathJax) {
+            MathJax.typesetPromise();
+        }
+    }
+
+    function handleAnswer(selectedIdx, btn) {
+        Array.from(ui.options.children).forEach(b => b.disabled = true);
+        
+        const q = currentChapter[currentIndex];
+        const correctIdx = q.correct;
+        
+        if(selectedIdx === correctIdx) {
+            btn.classList.add('correct');
+            score++;
+        } else {
+            btn.classList.add('incorrect');
+            ui.options.children[correctIdx].classList.add('correct');
+            fetchAIExplanation();
+        }
+        ui.nextBtn.disabled = false;
+    }
+
+    async function fetchAIExplanation() {
+        const q = currentChapter[currentIndex];
+        const cacheKey = q.q; // Use question text as key
+
+        ui.aiBox.classList.add('show');
+        
+        // 1. Check if we already have this explanation cached
+        if(aiCache[cacheKey]) {
+            ui.aiContent.innerHTML = aiCache[cacheKey];
+            if(window.MathJax) MathJax.typesetPromise();
+            return;
+        }
+
+        // 2. Show Loading Spinner
+        ui.aiContent.innerHTML = `
+            <div class="loader">
+                <div class="spinner"></div>
+                <span>Analyzing with ${AI_MODEL}...</span>
+            </div>
+        `;
+
+        // 3. Construct the Prompt for the AI
+        const prompt = `
+            You are a helpful Statistics Tutor.
+            Question: "${q.q}"
+            Options: ${q.options.join(', ')}
+            Correct Answer Index: ${q.correct} (The answer is "${q.options[q.correct]}")
+            
+            Task: Explain clearly why the correct answer is right and why the others are wrong. 
+            Keep it concise (max 3 sentences). Use Markdown bolding for key terms.
+        `;
+
+        try {
+            // 4. Make the REAL API Call to Groq
+            const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${GROQ_API_KEY}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    messages: [{ role: "user", content: prompt }],
+                    model: AI_MODEL,
+                    temperature: 0.3,
+                    max_tokens: 150
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`API Error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const rawAiText = data.choices[0].message.content;
+
+            // 5. Format the output (Markdown to HTML)
+            // Simple converter for bolding **text**
+            const formattedText = rawAiText
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>');
+
+            // 6. Save to cache and display
+            aiCache[cacheKey] = formattedText;
+            ui.aiContent.innerHTML = formattedText;
+
+            // Re-render Math symbols if the AI used any
+            if(window.MathJax) MathJax.typesetPromise();
+
+        } catch (err) {
+            console.error(err);
+            ui.aiContent.innerHTML = `<span style="color:var(--error-text)">
+                <strong>Connection Error:</strong> Could not reach the AI. <br>
+                Check your internet or API Key.
+            </span>`;
+        }
+    }
+
+    function nextQuestion() {
+        if(currentIndex < currentChapter.length - 1) {
+            currentIndex++;
+            renderQuestion();
+        } else {
+            showResult();
+        }
+    }
+
+    function showResult() {
+        showScreen('result');
+        const pct = Math.round((score / currentChapter.length) * 100);
+        ui.scoreDisplay.innerText = `${pct}%`;
+        ui.msgDisplay.innerText = pct >= 80 ? "Excellent mastery of Statistics!" : "Good effort! Keep reviewing.";
+    }
+
+    function showScreen(name) {
+        Object.values(ui.screens).forEach(s => s.classList.remove('active'));
+        ui.screens[name].classList.add('active');
+    }
+
+</script>
+</body>
+</html>
